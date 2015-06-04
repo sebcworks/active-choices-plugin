@@ -56,6 +56,12 @@
 			<artifactId>scriptler</artifactId>
 			<version>2.7</version>
 		</dependency>
+		<!-- Script Security plug-in for securing groovy scripts -->
+		<dependency>
+            <groupId>org.jenkins-ci.plugins</groupId>
+            <artifactId>script-security</artifactId>
+            <version>1.14</version>
+        </dependency>
 		<!-- JQuery is included only once -->
 		<dependency>
 			<groupId>org.kohsuke.stapler</groupId>

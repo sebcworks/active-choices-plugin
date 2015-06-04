@@ -25,7 +25,6 @@
 package org.biouno.unochoice.model;
 
 import groovy.lang.Binding;
-import groovy.lang.GroovyShell;
 import hudson.Extension;
 import hudson.Util;
 
@@ -39,8 +38,7 @@ import javax.annotation.Nullable;
 
 import jenkins.model.Jenkins;
 
-import org.codehaus.groovy.control.CompilationFailedException;
-import org.codehaus.groovy.control.CompilerConfiguration;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SecureGroovyScript;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
@@ -51,39 +49,70 @@ import org.kohsuke.stapler.DataBoundConstructor;
  */
 public class GroovyScript extends AbstractScript {
 
-    /*
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = -4886250205110550815L;
+
+	/*
      * Serial UID.
      */
-    private static final long serialVersionUID = -4886250205110550815L;
 
     private static final Logger LOGGER = Logger.getLogger(GroovyScript.class.getName());
 
     /**
      * Script content.
      */
-    private final String script;
+    @Deprecated
+    private String script;
+
+    /**
+     * Secure script content.
+     */
+    private SecureGroovyScript secureScript;
 
     @Nullable
-    private final String fallbackScript;
+    @Deprecated
+    private String fallbackScript;
+
+    /**
+     * Secure fallback script content.
+     */
+    private SecureGroovyScript secureFallbackScript;
 
     @DataBoundConstructor
+    public GroovyScript(SecureGroovyScript script, SecureGroovyScript fallbackScript) {
+        this.secureScript = script.configuringWithNonKeyItem();
+        this.secureFallbackScript = fallbackScript.configuringWithNonKeyItem();
+    }
+    
     public GroovyScript(String script, String fallbackScript) {
-        this.script = script;
-        this.fallbackScript = fallbackScript;
+        this.secureScript = new SecureGroovyScript(script, false, null);
+        this.secureFallbackScript = new SecureGroovyScript(fallbackScript, false, null);
+    }
+
+    private Object readResolve() {
+    	if (script != null) {
+    		secureScript = new SecureGroovyScript(script, false, null);
+    	}
+    	if (fallbackScript != null) {
+    		secureFallbackScript = new SecureGroovyScript(fallbackScript, false, null);
+    	}
+    	return this;
     }
 
     /**
      * @return the script
      */
-    public String getScript() {
-        return script;
+    public SecureGroovyScript getScript() {
+        return secureScript;
     }
 
     /**
      * @return the fallbackScript
      */
-    public String getFallbackScript() {
-        return fallbackScript;
+    public SecureGroovyScript getFallbackScript() {
+        return secureFallbackScript;
     }
 
     /*
@@ -123,21 +152,20 @@ public class GroovyScript extends AbstractScript {
             }
         }
 
-        final GroovyShell shell = new GroovyShell(cl, context, CompilerConfiguration.DEFAULT);
         try {
-            return shell.evaluate(script);
-        } catch (RuntimeException re) {
-            if (this.fallbackScript != null) {
+        	return secureScript.evaluate(cl, context);
+        } catch (Exception re) {
+            if (this.secureFallbackScript != null) {
                 try {
                     LOGGER.log(Level.FINEST, "Fallback to default script...", re);
-                    return shell.evaluate(fallbackScript);
-                } catch (CompilationFailedException cfe2) {
-                    LOGGER.log(Level.WARNING, "Error executing fallback script", cfe2);
-                    throw cfe2;
+                    return secureFallbackScript.evaluate(cl, context);
+                } catch (Exception e2) {
+                    LOGGER.log(Level.WARNING, "Error executing fallback script", e2);
+                    throw new RuntimeException("Failed to evaluate fallback script: " + e2.getMessage(), e2);
                 }
             } else {
                 LOGGER.log(Level.WARNING, "No fallback script configured for '%s'");
-                throw re;
+                throw new RuntimeException("Failed to evaluate script: " + re.getMessage(), re);
             }
         }
     }
@@ -147,8 +175,8 @@ public class GroovyScript extends AbstractScript {
      */
     @Override
     public String toString() {
-        return "GroovyScript [script=" + script + ", fallbackScript="
-                + fallbackScript + "]";
+        return "GroovyScript [script=" + secureScript.getScript() + ", fallbackScript="
+                + (secureFallbackScript != null ? secureFallbackScript.getScript() : "") + "]";
     }
 
     /* (non-Javadoc)
@@ -159,8 +187,8 @@ public class GroovyScript extends AbstractScript {
         final int prime = 31;
         int result = 1;
         result = prime * result
-                + ((fallbackScript == null) ? 0 : fallbackScript.hashCode());
-        result = prime * result + ((script == null) ? 0 : script.hashCode());
+                + ((secureFallbackScript == null) ? 0 : secureFallbackScript.hashCode());
+        result = prime * result + ((secureScript == null) ? 0 : secureScript.hashCode());
         return result;
     }
 
@@ -176,15 +204,15 @@ public class GroovyScript extends AbstractScript {
         if (getClass() != obj.getClass())
             return false;
         GroovyScript other = (GroovyScript) obj;
-        if (fallbackScript == null) {
-            if (other.fallbackScript != null)
+        if (secureFallbackScript == null) {
+            if (other.secureFallbackScript != null)
                 return false;
-        } else if (!fallbackScript.equals(other.fallbackScript))
+        } else if (!secureFallbackScript.equals(other.secureFallbackScript))
             return false;
-        if (script == null) {
-            if (other.script != null)
+        if (secureScript == null) {
+            if (other.secureScript != null)
                 return false;
-        } else if (!script.equals(other.script))
+        } else if (!secureScript.equals(other.secureScript))
             return false;
         return true;
     }
