@@ -52,7 +52,7 @@ import hudson.model.StringParameterValue;
  * @since 0.20
  */
 public abstract class AbstractScriptableParameter extends AbstractUnoChoiceParameter
-    implements ScriptableParameter<Map<Object, Object>> {
+        implements ScriptableParameter<Map<Object, Object>> {
 
     /*
      * Serial UID.
@@ -73,7 +73,15 @@ public abstract class AbstractScriptableParameter extends AbstractUnoChoiceParam
     /**
      * Number of visible items on the screen.
      */
-    private volatile int visibleItemCount = 1;
+    private final int visibleItemCount;
+    /**
+     * Computer number of visible items.
+     */
+    private volatile int computedVisibleItemCount;
+    /**
+     * Use the default maximum visible item count.
+     */
+    private final Boolean useDefaultMaxVisibleItemCount;
     /**
      * Script used to render the parameter.
      */
@@ -96,6 +104,8 @@ public abstract class AbstractScriptableParameter extends AbstractUnoChoiceParam
     protected AbstractScriptableParameter(String name, String description, Script script) {
         super(name, description);
         this.script = script;
+        this.visibleItemCount = 1;
+        this.useDefaultMaxVisibleItemCount = Boolean.TRUE;
         this.projectName = null;
     }
 
@@ -108,10 +118,49 @@ public abstract class AbstractScriptableParameter extends AbstractUnoChoiceParam
      * @param description description
      * @param randomName parameter random generated name (uuid)
      * @param script script used to generate the list of parameter values
+     * @deprecated see JENKINS-38889
      */
     protected AbstractScriptableParameter(String name, String description, String randomName, Script script) {
         super(name, description, randomName);
         this.script = script;
+        this.visibleItemCount = 1;
+        this.useDefaultMaxVisibleItemCount = Boolean.TRUE;
+        // Try to get the project name from the current request. In case of being called in some other non-web way,
+        // the name will be fetched later via Jenkins.getInstance() and iterating through all items. This is for a
+        // performance wise approach first.
+        final StaplerRequest currentRequest = Stapler.getCurrentRequest();
+        String projectName = null;
+        if (currentRequest != null) {
+            final Ancestor ancestor = currentRequest.findAncestor(AbstractItem.class);
+            if (ancestor != null) {
+                final Object o = ancestor.getObject();
+                if (o instanceof AbstractItem) {
+                    final AbstractItem parentItem = (AbstractItem) o;
+                    projectName = parentItem.getName();
+                }
+            }
+        }
+        this.projectName = projectName;
+    }
+
+    /**
+     * Inherited constructor.
+     *
+     * {@inheritDoc}
+     *
+     * @param name name
+     * @param description description
+     * @param randomName parameter random generated name (uuid)
+     * @param script script used to generate the list of parameter values
+     * @param useDefaultMaxVisibleItemCount flag to enable the default maximum of visible item count
+     * @param visibleItemCount number of visible items on the UI
+     */
+    protected AbstractScriptableParameter(String name, String description, String randomName, Script script,
+            Boolean useDefaultMaxVisibleItemCount, Integer visibleItemCount) {
+        super(name, description, randomName);
+        this.script = script;
+        this.visibleItemCount = visibleItemCount;
+        this.useDefaultMaxVisibleItemCount = useDefaultMaxVisibleItemCount;
         // Try to get the project name from the current request. In case of being called in some other non-web way,
         // the name will be fetched later via Jenkins.getInstance() and iterating through all items. This is for a
         // performance wise approach first.
@@ -140,6 +189,15 @@ public abstract class AbstractScriptableParameter extends AbstractUnoChoiceParam
     }
 
     /**
+     * Get the flag to use the default maximum visible item count.
+     *
+     * @return flag, that indicates whether to use the default maximum visible item count or not
+     */
+    public Boolean getUseDefaultMaxVisibleItemCount() {
+        return useDefaultMaxVisibleItemCount;
+    }
+
+    /**
      * Gets the current parameters, be it before or after other referenced parameters triggered an update. Populates
      * parameters common to all evaluations, such as jenkinsProject, which is the current Jenkins project.
      *
@@ -151,6 +209,7 @@ public abstract class AbstractScriptableParameter extends AbstractUnoChoiceParam
 
     /**
      * Helper parameters used to render the parameter definition.
+     * 
      * @return Map with helper parameters
      */
     private Map<Object, Object> getHelperParameters() {
@@ -175,12 +234,13 @@ public abstract class AbstractScriptableParameter extends AbstractUnoChoiceParam
 
     public Map<Object, Object> getChoices() {
         Map<Object, Object> choices = this.getChoices(getParameters());
-        visibleItemCount = choices.size();
+        computedVisibleItemCount = choices.size();
         return choices;
     }
 
     /*
      * (non-Javadoc)
+     * 
      * @see org.biouno.unochoice.ScriptableParameter#getChoices(java.util.Map)
      */
     @Override
@@ -189,7 +249,7 @@ public abstract class AbstractScriptableParameter extends AbstractUnoChoiceParam
         final Object value = eval(parameters);
         if (value instanceof Map) {
             Map<Object, Object> map = (Map<Object, Object>) value;
-            visibleItemCount = map.size();
+            computedVisibleItemCount = map.size();
             return map;
         }
         if (value instanceof List) {
@@ -198,11 +258,12 @@ public abstract class AbstractScriptableParameter extends AbstractUnoChoiceParam
             for (Object o : (List<Object>) value) {
                 map.put(o, o);
             }
-            visibleItemCount = map.size();
+            computedVisibleItemCount = map.size();
             return map;
         }
-        LOGGER.warning(String.format("Script parameter with name '%s' is not an instance of java.util.Map. The "
-                + "parameter value is %s", getName(), value));
+        LOGGER.warning(String.format(
+                "Script parameter with name '%s' is not an instance of java.util.Map. The " + "parameter value is %s",
+                getName(), value));
         return Collections.emptyMap();
     }
 
@@ -232,6 +293,7 @@ public abstract class AbstractScriptableParameter extends AbstractUnoChoiceParam
 
     /*
      * (non-Javadoc)
+     * 
      * @see hudson.model.ParameterDefinition#getDefaultParameterValue()
      */
     @Override
@@ -255,17 +317,29 @@ public abstract class AbstractScriptableParameter extends AbstractUnoChoiceParam
     /**
      * Get the number of visible items in the select.
      *
-     * @return the number of choices or, if it is higher than the default, then it returns the default maximum value
+     * @return the number of visible items
      */
     public int getVisibleItemCount() {
-        if (LOGGER.isLoggable(Level.FINE)) {
-            LOGGER.entering(AbstractUnoChoiceParameter.class.getName(), "getVisibleItemCount");
+        return visibleItemCount;
+    }
+
+    /**
+     * Get the computed number of visible items in the select.
+     *
+     * @return 1 if visibleItemCount is less or equal to 0, the visibleItemCount value if not using the default max
+     *     visible item count, otherwise the number of choices or, if it is higher than the default, then it returns
+     *     the default maximum value
+     */
+    public int getComputedVisibleItemCount() {
+        if (useDefaultMaxVisibleItemCount) {
+            if (computedVisibleItemCount < DEFAULT_MAX_VISIBLE_ITEM_COUNT)
+                return computedVisibleItemCount;
+            return DEFAULT_MAX_VISIBLE_ITEM_COUNT;
         }
-        if (visibleItemCount <= 0)
-            visibleItemCount = 1;
-        if (visibleItemCount < DEFAULT_MAX_VISIBLE_ITEM_COUNT)
-            return visibleItemCount;
-        return DEFAULT_MAX_VISIBLE_ITEM_COUNT;
+        if (visibleItemCount <= 0) {
+            return 1;
+        }
+        return visibleItemCount;
     }
 
 }

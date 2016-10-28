@@ -23,7 +23,7 @@
             <![CDATA[
               (function() {
                   var f = function() {
-                      var size = ${it.visibleItemCount};
+                      var size = ${it.computedVisibleItemCount};
                       document.getElementById("${multiple_select_id}").size = size;
                   };
                   f();

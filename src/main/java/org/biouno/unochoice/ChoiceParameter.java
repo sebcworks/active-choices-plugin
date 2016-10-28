@@ -78,11 +78,31 @@ public class ChoiceParameter extends AbstractScriptableParameter {
      * @param script script
      * @param choiceType choice type
      * @param filterable filter flag
+     * @deprecated see JENKINS-38889
      */
-    @DataBoundConstructor
     public ChoiceParameter(String name, String description, String randomName, Script script, String choiceType,
             Boolean filterable) {
         super(name, description, randomName, script);
+        this.choiceType = StringUtils.defaultIfBlank(choiceType, PARAMETER_TYPE_SINGLE_SELECT);
+        this.filterable = filterable;
+    }
+
+    /**
+     * Constructor called from Jelly with parameters.
+     *
+     * @param name name
+     * @param description description
+     * @param randomName parameter random generated name (uuid)
+     * @param script script
+     * @param choiceType choice type
+     * @param filterable filter flag
+     * @param useDefaultMaxVisibleItemCount flag to enable the default maximum of visible item count
+     * @param visibleItemCount number of visible items on the UI
+     */
+    @DataBoundConstructor
+    public ChoiceParameter(String name, String description, String randomName, Script script, String choiceType,
+            Boolean filterable, Boolean useDefaultMaxVisibleItemCount, Integer visibleItemCount) {
+        super(name, description, randomName, script, useDefaultMaxVisibleItemCount, visibleItemCount);
         this.choiceType = StringUtils.defaultIfBlank(choiceType, PARAMETER_TYPE_SINGLE_SELECT);
         this.filterable = filterable;
     }

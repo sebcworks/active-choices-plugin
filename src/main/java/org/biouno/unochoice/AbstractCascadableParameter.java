@@ -77,10 +77,27 @@ public abstract class AbstractCascadableParameter extends AbstractScriptablePara
      * @param randomName parameter random generated name (uuid)
      * @param script script used to generate the list of parameter values
      * @param referencedParameters comma separated list of referenced parameters
+     * @deprecated see JENKINS-38889
      */
     protected AbstractCascadableParameter(String name, String description, String randomName,
             Script script, String referencedParameters) {
         super(name, description, randomName, script);
+        this.referencedParameters = referencedParameters;
+    }
+
+    /**
+     * Create a new abstract cascadable parameter.
+     * @param name name
+     * @param description description
+     * @param randomName parameter random generated name (uuid)
+     * @param script script used to generate the list of parameter values
+     * @param referencedParameters comma separated list of referenced parameters
+     * @param useDefaultMaxVisibleItemCount flag to enable the default maximum of visible item count
+     * @param visibleItemCount number of visible items on the UI
+     */
+    protected AbstractCascadableParameter(String name, String description, String randomName,
+            Script script, String referencedParameters, Boolean useDefaultMaxVisibleItemCount, Integer visibleItemCount) {
+        super(name, description, randomName, script, useDefaultMaxVisibleItemCount, visibleItemCount);
         this.referencedParameters = referencedParameters;
     }
 

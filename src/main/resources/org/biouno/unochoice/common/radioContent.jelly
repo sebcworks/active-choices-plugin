@@ -41,8 +41,8 @@
       var f = function() {
           var height = 0;
           var maxCount = ${index};
-          if(maxCount > ${it.visibleItemCount}) {
-              maxCount = ${it.visibleItemCount};
+          if(maxCount > ${it.computedVisibleItemCount}) {
+              maxCount = ${it.computedVisibleItemCount};
           }
 
           if(maxCount > 0 && document.getElementById("${id}").offsetHeight !=0) {

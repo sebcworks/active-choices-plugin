@@ -24,21 +24,26 @@
 
 package org.biouno.unochoice;
 
-import hudson.Extension;
-
 import org.apache.commons.lang.StringUtils;
 import org.biouno.unochoice.model.Script;
 import org.kohsuke.stapler.DataBoundConstructor;
 
+import hudson.Extension;
+
 /**
- * <p>A choice parameter, that gets updated when another parameter changes. The simplest 
- * use case for this, would be having a list of states, and when the user selected a
- * state it would trigger an update of the city fields.</p>
+ * <p>
+ * A choice parameter, that gets updated when another parameter changes. The simplest use case for this, would be having
+ * a list of states, and when the user selected a state it would trigger an update of the city fields.
+ * </p>
  *
- * <p>The state parameter would be a choice parameter, and the city parameter would be a
- * cascade choice parameter, that referenced the former.</p>
+ * <p>
+ * The state parameter would be a choice parameter, and the city parameter would be a cascade choice parameter, that
+ * referenced the former.
+ * </p>
  *
- * <p>Its options are retrieved from the evaluation of a Groovy script.</p>
+ * <p>
+ * Its options are retrieved from the evaluation of a Groovy script.
+ * </p>
  *
  * @author Bruno P. Kinoshita
  * @since 0.1
@@ -71,8 +76,8 @@ public class CascadeChoiceParameter extends AbstractCascadableParameter {
      * @param filterable filter flag
      * @deprecated see JENKINS-32149
      */
-    public CascadeChoiceParameter(String name, String description, Script script, 
-            String choiceType, String referencedParameters, Boolean filterable) {
+    public CascadeChoiceParameter(String name, String description, Script script, String choiceType,
+            String referencedParameters, Boolean filterable) {
         super(name, description, script, referencedParameters);
         this.choiceType = StringUtils.defaultIfBlank(choiceType, PARAMETER_TYPE_SINGLE_SELECT);
         this.filterable = filterable;
@@ -88,17 +93,41 @@ public class CascadeChoiceParameter extends AbstractCascadableParameter {
      * @param choiceType choice type
      * @param referencedParameters referenced parameters
      * @param filterable filter flag
+     * @deprecated see JENKINS-38889
+     */
+    public CascadeChoiceParameter(String name, String description, String randomName, Script script, String choiceType,
+            String referencedParameters, Boolean filterable) {
+        super(name, description, randomName, script, referencedParameters);
+        this.choiceType = StringUtils.defaultIfBlank(choiceType, PARAMETER_TYPE_SINGLE_SELECT);
+        this.filterable = filterable;
+    }
+
+    /**
+     * Constructor called from Jelly with parameters.
+     *
+     * @param name name
+     * @param description description
+     * @param randomName parameter random generated name (uuid)
+     * @param script script
+     * @param choiceType choice type
+     * @param referencedParameters referenced parameters
+     * @param filterable filter flag
+     * @param useDefaultMaxVisibleItemCount flag to enable the default maximum of visible item count
+     * @param visibleItemCount number of visible items on the UI
      */
     @DataBoundConstructor
-    public CascadeChoiceParameter(String name, String description, String randomName, Script script, 
-            String choiceType, String referencedParameters, Boolean filterable) {
-        super(name, description, randomName, script, referencedParameters);
+    public CascadeChoiceParameter(String name, String description, String randomName, Script script, String choiceType,
+            String referencedParameters, Boolean filterable, Boolean useDefaultMaxVisibleItemCount,
+            Integer visibleItemCount) {
+        super(name, description, randomName, script, referencedParameters, useDefaultMaxVisibleItemCount,
+                visibleItemCount);
         this.choiceType = StringUtils.defaultIfBlank(choiceType, PARAMETER_TYPE_SINGLE_SELECT);
         this.filterable = filterable;
     }
 
     /*
      * (non-Javadoc)
+     * 
      * @see org.biouno.unochoice.AbstractUnoChoiceParameter#getChoiceType()
      */
     @Override

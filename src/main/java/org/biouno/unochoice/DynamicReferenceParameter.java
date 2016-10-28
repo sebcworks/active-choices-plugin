@@ -42,16 +42,20 @@ import hudson.util.FormValidation;
 import net.sf.json.JSONObject;
 
 /**
- * <p>Provides a <b>dynamic reference parameter</b> for users. This is a not so elegant
- * solution, since we are using a ParameterDefinition extension point, but it 
- * actually <b>doesn't provide any parameter value</b>.</p>
+ * <p>
+ * Provides a <b>dynamic reference parameter</b> for users. This is a not so elegant solution, since we are using a
+ * ParameterDefinition extension point, but it actually <b>doesn't provide any parameter value</b>.
+ * </p>
  *
- * <p>This kind of parameter is only for reference. An use case is when you have several
- * job parameters, but your input values may vary depending on previous executions. You 
- * can get the previous executions by accessing from your Groovy code the jenkinsProject
- * variable.</p>
+ * <p>
+ * This kind of parameter is only for reference. An use case is when you have several job parameters, but your input
+ * values may vary depending on previous executions. You can get the previous executions by accessing from your Groovy
+ * code the jenkinsProject variable.
+ * </p>
  *
- * <p>Its options are retrieved from the evaluation of a Groovy script.</p>
+ * <p>
+ * Its options are retrieved from the evaluation of a Groovy script.
+ * </p>
  *
  * @author Bruno P. Kinoshita
  * @since 0.1
@@ -79,11 +83,11 @@ public class DynamicReferenceParameter extends AbstractCascadableParameter {
      * @param choiceType choice type
      * @param referencedParameters referenced parameters
      * @param omitValueField used in the UI to decide whether to include a hidden empty &lt;input name=value&gt;.
-     * <code>false</code> by default.
+     *            <code>false</code> by default.
      * @deprecated see JENKINS-32149
      */
-    public DynamicReferenceParameter(String name, String description, Script script, 
-            String choiceType, String referencedParameters, Boolean omitValueField) {
+    public DynamicReferenceParameter(String name, String description, Script script, String choiceType,
+            String referencedParameters, Boolean omitValueField) {
         super(name, description, script, referencedParameters);
         this.choiceType = StringUtils.defaultIfBlank(choiceType, PARAMETER_TYPE_SINGLE_SELECT);
         this.omitValueField = BooleanUtils.toBooleanDefaultIfNull(omitValueField, Boolean.FALSE);
@@ -99,9 +103,9 @@ public class DynamicReferenceParameter extends AbstractCascadableParameter {
      * @param choiceType choice type
      * @param referencedParameters referenced parameters
      * @param omitValueField used in the UI to decide whether to include a hidden empty &lt;input name=value&gt;.
-     * <code>false</code> by default.
+     *            <code>false</code> by default.
+     * @deprecated see JENKINS-38889
      */
-    @DataBoundConstructor
     public DynamicReferenceParameter(String name, String description, String randomName, Script script,
             String choiceType, String referencedParameters, Boolean omitValueField) {
         super(name, description, randomName, script, referencedParameters);
@@ -109,8 +113,32 @@ public class DynamicReferenceParameter extends AbstractCascadableParameter {
         this.omitValueField = BooleanUtils.toBooleanDefaultIfNull(omitValueField, Boolean.FALSE);
     }
 
+    /**
+     * Constructor called from Jelly with parameters.
+     *
+     * @param name name
+     * @param description description
+     * @param randomName parameter random generated name (uuid)
+     * @param script script
+     * @param choiceType choice type
+     * @param referencedParameters referenced parameters
+     * @param omitValueField used in the UI to decide whether to include a hidden empty &lt;input name=value&gt;.
+     *            <code>false</code> by default.
+     * @param useDefaultMaxVisibleItemCount flag to enable the default maximum of visible item count
+     * @param visibleItemCount number of visible items on the UI
+     */
+    @DataBoundConstructor
+    public DynamicReferenceParameter(String name, String description, String randomName, Script script,
+            String choiceType, String referencedParameters, Boolean omitValueField,
+            Boolean useDefaultMaxVisibleItemCount, Integer visibleItemCount) {
+        super(name, description, randomName, script, referencedParameters, useDefaultMaxVisibleItemCount, visibleItemCount);
+        this.choiceType = StringUtils.defaultIfBlank(choiceType, PARAMETER_TYPE_SINGLE_SELECT);
+        this.omitValueField = BooleanUtils.toBooleanDefaultIfNull(omitValueField, Boolean.FALSE);
+    }
+
     /*
      * (non-Javadoc)
+     * 
      * @see org.biouno.unochoice.AbstractUnoChoiceParameter#getChoiceType()
      */
     @Override
@@ -136,11 +164,12 @@ public class DynamicReferenceParameter extends AbstractCascadableParameter {
         private AbstractProject<?, ?> project;
 
         /*
-         * Used to store a reference to the Jenkins project related to this parameter.
-         * A bit hacky, probably using another extension point would be a good idea.
+         * Used to store a reference to the Jenkins project related to this parameter. A bit hacky, probably using
+         * another extension point would be a good idea.
          */
         @Override
-        public ParameterDefinition newInstance(StaplerRequest req, JSONObject formData) throws hudson.model.Descriptor.FormException {
+        public ParameterDefinition newInstance(StaplerRequest req, JSONObject formData)
+                throws hudson.model.Descriptor.FormException {
             List<Ancestor> ancestors = req.getAncestors();
             AbstractProject<?, ?> project = null;
             for (Ancestor ancestor : ancestors) {
