@@ -24,8 +24,6 @@
 
 package org.biouno.unochoice;
 
-import java.util.List;
-
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.biouno.unochoice.model.Script;
@@ -36,7 +34,7 @@ import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.bind.JavaScriptMethod;
 
 import hudson.Extension;
-import hudson.model.AbstractProject;
+import hudson.model.AbstractItem;
 import hudson.model.ParameterDefinition;
 import hudson.util.FormValidation;
 import net.sf.json.JSONObject;
@@ -133,31 +131,36 @@ public class DynamicReferenceParameter extends AbstractCascadableParameter {
     @Extension
     public static final class DescriptorImpl extends UnoChoiceParameterDescriptor {
 
-        private AbstractProject<?, ?> project;
-
-        /*
-         * Used to store a reference to the Jenkins project related to this parameter.
-         * A bit hacky, probably using another extension point would be a good idea.
-         */
         @Override
         public ParameterDefinition newInstance(StaplerRequest req, JSONObject formData) throws hudson.model.Descriptor.FormException {
+            String projectName = null;
             if (req != null) {
-                List<Ancestor> ancestors = req.getAncestors();
-                AbstractProject<?, ?> project = null;
-                for (Ancestor ancestor : ancestors) {
-                    Object object = ancestor.getObject();
-                    if (object instanceof AbstractProject<?, ?>) {
-                        project = (AbstractProject<?, ?>) object;
-                        break;
+                final Ancestor ancestor = req.findAncestor(AbstractItem.class);
+                if (ancestor != null) {
+                    final Object o = ancestor.getObject();
+                    if (o instanceof AbstractItem) {
+                        final AbstractItem parentItem = (AbstractItem) o;
+                        projectName = parentItem.getName();
                     }
                 }
-                this.project = project;
             }
-            return super.newInstance(req, formData);
-        }
-
-        public AbstractProject<?, ?> getProject() {
-            return project;
+            final String name = formData.getString("name");
+            final String description = formData.getString("description");
+            final String randomName = formData.getString("randomName");
+            final Script script = null;
+            final String choiceType = formData.getString("choiceType");
+            final String referencedParameters = formData.getString("referencedParameters");
+            final Boolean omitValueField = formData.getBoolean("omitValueField");
+            final DynamicReferenceParameter param = new DynamicReferenceParameter(
+                    name,
+                    description,
+                    randomName,
+                    script,
+                    choiceType,
+                    referencedParameters,
+                    omitValueField);
+            param.setProjectName(projectName);
+            return param;
         }
 
         @Override

@@ -7,8 +7,5 @@
   </j:invokeStatic>
   <j:set var="paramName" value="${paramName}" scope="parent" />
   <ul id='ecp_${paramName}'>
-    <j:forEach var="entry" items="${it.getChoices().values()}">
-      <li>${entry}</li>
-    </j:forEach>
   </ul>
 </j:jelly>

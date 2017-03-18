@@ -2,7 +2,7 @@
   xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form"
   xmlns:i="jelly:fmt" xmlns:p="/lib/hudson/project">
   ${it.parameters.clear()}
-  <st:include page="/org/biouno/unochoice/common/choiceParameterCommon.jelly"/>
+  <st:include page="/org/biouno/unochoice/CascadeChoiceParameter/choiceParameterCommon.jelly"/>
   <script type="text/javascript">
     // source, references table
     var referencedParameters = Array();

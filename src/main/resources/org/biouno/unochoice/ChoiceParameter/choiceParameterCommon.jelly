@@ -11,13 +11,13 @@
       <j:choose>
         <j:when test="${choiceType eq 'PT_SINGLE_SELECT'}">
           <select name="value">
-            <st:include page="/org/biouno/unochoice/common/selectContent.jelly"/>
+            <st:include page="/org/biouno/unochoice/ChoiceParameter/selectContent.jelly"/>
           </select>
         </j:when>
         <j:when test="${choiceType eq 'PT_MULTI_SELECT'}">
           <j:set var="multiple_select_id" value="multiple_select_${it.randomName}_${index}" />
           <select name="value" multiple="multiple" size="1" id="${multiple_select_id}">
-            <st:include page="/org/biouno/unochoice/common/selectContent.jelly"/>
+            <st:include page="/org/biouno/unochoice/ChoiceParameter/selectContent.jelly"/>
           </select>
           <script type="text/javascript">
             <![CDATA[
@@ -32,10 +32,10 @@
           </script>
         </j:when>
         <j:when test="${choiceType eq 'PT_RADIO'}">
-          <st:include page="/org/biouno/unochoice/common/radioContent.jelly"/>
+          <st:include page="/org/biouno/unochoice/ChoiceParameter/radioContent.jelly"/>
         </j:when>
         <j:when test="${choiceType eq 'PT_CHECKBOX'}">
-          <st:include page="/org/biouno/unochoice/common/checkboxContent.jelly"/>
+          <st:include page="/org/biouno/unochoice/ChoiceParameter/checkboxContent.jelly"/>
         </j:when>
         <j:otherwise>
           <p>Unsupported element: ${choiceType}</p>

@@ -24,11 +24,25 @@
 
 package org.biouno.unochoice;
 
-import hudson.Extension;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
+import org.biouno.unochoice.model.GroovyScript;
 import org.biouno.unochoice.model.Script;
+import org.biouno.unochoice.model.ScriptlerScript;
+import org.biouno.unochoice.model.ScriptlerScriptParameter;
+import org.kohsuke.stapler.Ancestor;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.StaplerRequest;
+
+import hudson.Extension;
+import hudson.model.AbstractItem;
+import hudson.model.ParameterDefinition;
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
 
 /**
  * <p>A choice parameter, that gets updated when another parameter changes. The simplest 
@@ -115,10 +129,72 @@ public class CascadeChoiceParameter extends AbstractCascadableParameter {
         return filterable;
     }
 
+    @Override
+    public Map<Object, Object> getChoices() {
+        return Collections.emptyMap();
+    }
+
     // --- descriptor
 
     @Extension
     public static final class DescriptImpl extends UnoChoiceParameterDescriptor {
+
+        @Override
+        public ParameterDefinition newInstance(StaplerRequest req, JSONObject formData) throws FormException {
+            String projectName = null;
+            if (req != null) {
+                final Ancestor ancestor = req.findAncestor(AbstractItem.class);
+                if (ancestor != null) {
+                    final Object o = ancestor.getObject();
+                    if (o instanceof AbstractItem) {
+                        final AbstractItem parentItem = (AbstractItem) o;
+                        projectName = parentItem.getName();
+                    }
+                }
+            }
+            final String name = formData.getString("name");
+            final String description = formData.getString("description");
+            final String randomName = formData.getString("randomName");
+            JSONObject scriptJsonObject = formData.getJSONObject("script");
+            final Script script;
+            if (scriptJsonObject.containsKey("scriptlerScriptId")) {
+                JSONObject obj = formData.getJSONObject("script");
+                final String scriptlerScriptId = obj.getString("scriptlerScriptId");
+                final List<ScriptlerScriptParameter> parameters = new ArrayList<ScriptlerScriptParameter>();
+                if (obj.containsKey("defineParams")) {
+                    JSONObject defineParams = obj.getJSONObject("defineParams");
+                    if (defineParams.containsKey("parameters")) {
+                        JSONArray scriptlerScriptParameters = defineParams.getJSONArray("parameters");
+                        for (int i = 0; i < scriptlerScriptParameters.size(); i++) {
+                            JSONObject entry = scriptlerScriptParameters.getJSONObject(i);
+                            ScriptlerScriptParameter param = new ScriptlerScriptParameter(
+                                    entry.getString("name"), entry.getString("value"));
+                            parameters.add(param);
+                        }
+                    }
+                }
+                final ScriptlerScript scriptlerScript = new ScriptlerScript(scriptlerScriptId, parameters);
+                script = scriptlerScript;
+            } else {
+                GroovyScript groovyScript =
+                        (GroovyScript) formData.getJSONObject("script").toBean(GroovyScript.class);
+                script = groovyScript;
+            }
+            final String choiceType = formData.getString("choiceType");
+            final String referencedParameters = formData.getString("referencedParameters");
+            final Boolean omitValueField = formData.containsKey("") ?
+                    formData.getBoolean("omitValueField") : Boolean.FALSE;
+            CascadeChoiceParameter param = new CascadeChoiceParameter(
+                    name,
+                    description,
+                    randomName,
+                    script,
+                    choiceType,
+                    referencedParameters,
+                    omitValueField);
+            param.setProjectName(projectName);
+            return param;
+        }
 
         @Override
         public String getDisplayName() {

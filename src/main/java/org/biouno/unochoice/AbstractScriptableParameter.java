@@ -28,19 +28,19 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 
+import org.apache.commons.collections.map.LRUMap;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.biouno.unochoice.model.Script;
 import org.biouno.unochoice.util.ScriptCallback;
 import org.biouno.unochoice.util.Utils;
-import org.kohsuke.stapler.Ancestor;
-import org.kohsuke.stapler.Stapler;
-import org.kohsuke.stapler.StaplerRequest;
+
+import com.codahale.metrics.Timer.Context;
 
 import hudson.model.AbstractBuild;
-import hudson.model.AbstractItem;
 import hudson.model.ParameterValue;
 import hudson.model.Project;
 import hudson.model.StringParameterValue;
@@ -54,6 +54,8 @@ import hudson.model.StringParameterValue;
 public abstract class AbstractScriptableParameter extends AbstractUnoChoiceParameter
     implements ScriptableParameter<Map<Object, Object>> {
 
+    @SuppressWarnings("unchecked")
+    private static final Map<String, Project<?, ?>> CACHE = Collections.synchronizedMap(new LRUMap(10));
     /*
      * Serial UID.
      */
@@ -85,7 +87,7 @@ public abstract class AbstractScriptableParameter extends AbstractUnoChoiceParam
     /**
      * The project name.
      */
-    private final String projectName;
+    private volatile String projectName;
 
     /**
      * Inherited constructor.
@@ -116,21 +118,14 @@ public abstract class AbstractScriptableParameter extends AbstractUnoChoiceParam
     protected AbstractScriptableParameter(String name, String description, String randomName, Script script) {
         super(name, description, randomName);
         this.script = script;
-        // Try to get the project name from the current request. In case of being called in some other non-web way,
-        // the name will be fetched later via Jenkins.getInstance() and iterating through all items. This is for a
-        // performance wise approach first.
-        final StaplerRequest currentRequest = Stapler.getCurrentRequest();
-        String projectName = null;
-        if (currentRequest != null) {
-            final Ancestor ancestor = currentRequest.findAncestor(AbstractItem.class);
-            if (ancestor != null) {
-                final Object o = ancestor.getObject();
-                if (o instanceof AbstractItem) {
-                    final AbstractItem parentItem = (AbstractItem) o;
-                    projectName = parentItem.getName();
-                }
-            }
-        }
+        this.projectName = null;
+    }
+
+    public String getProjectName() {
+        return projectName;
+    }
+
+    public void setProjectName(String projectName) {
         this.projectName = projectName;
     }
 
@@ -159,16 +154,24 @@ public abstract class AbstractScriptableParameter extends AbstractUnoChoiceParam
      */
     private Map<Object, Object> getHelperParameters() {
         // map with parameters
-        final Map<Object, Object> helperParameters = new LinkedHashMap<Object, Object>();
+        final Map<Object, Object> helperParameters = new ConcurrentHashMap<Object, Object>();
 
         // First, if the project name is set, we then find the project by its name, and inject into the map
         Project<?, ?> project = null;
         if (StringUtils.isNotBlank(this.projectName)) {
             // first we try to get the item given its name, which is more efficient
-            project = Utils.getProjectByName(this.projectName);
+            project = CACHE.get(this.projectName);
+            if (project == null) {
+                project = Utils.getProjectByName(this.projectName);
+                CACHE.put(this.projectName, project);
+            }
         } else {
             // otherwise, in case we don't have the item name, we iterate looking for a job that uses this UUID
-            project = Utils.findProjectByParameterUUID(this.getRandomName());
+            project = CACHE.get(this.projectName);
+            if (project == null) {
+                project = Utils.findProjectByParameterUUID(this.getRandomName());
+                CACHE.put(project.getName(), project);
+            }
         }
         if (project != null) {
             helperParameters.put(JENKINS_PROJECT_VARIABLE_NAME, project);
@@ -232,6 +235,7 @@ public abstract class AbstractScriptableParameter extends AbstractUnoChoiceParam
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
     private Object eval(Map<Object, Object> parameters) {
+        Context ctx = PluginImpl.TIMERMETRIC.time();
         try {
             Map<Object, Object> scriptParameters = getHelperParameters();
             scriptParameters.putAll(parameters);
@@ -240,6 +244,8 @@ public abstract class AbstractScriptableParameter extends AbstractUnoChoiceParam
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error executing script for dynamic parameter", e);
             return Collections.emptyMap();
+        } finally {
+            ctx.close();
         }
     }
 
