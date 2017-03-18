@@ -34,6 +34,7 @@ import org.biouno.unochoice.model.GroovyScript;
 import org.biouno.unochoice.model.Script;
 import org.biouno.unochoice.model.ScriptlerScript;
 import org.biouno.unochoice.model.ScriptlerScriptParameter;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SecureGroovyScript;
 import org.kohsuke.stapler.Ancestor;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
@@ -158,11 +159,10 @@ public class CascadeChoiceParameter extends AbstractCascadableParameter {
             JSONObject scriptJsonObject = formData.getJSONObject("script");
             final Script script;
             if (scriptJsonObject.containsKey("scriptlerScriptId")) {
-                JSONObject obj = formData.getJSONObject("script");
-                final String scriptlerScriptId = obj.getString("scriptlerScriptId");
+                final String scriptlerScriptId = scriptJsonObject.getString("scriptlerScriptId");
                 final List<ScriptlerScriptParameter> parameters = new ArrayList<ScriptlerScriptParameter>();
-                if (obj.containsKey("defineParams")) {
-                    JSONObject defineParams = obj.getJSONObject("defineParams");
+                if (scriptJsonObject.containsKey("defineParams")) {
+                    JSONObject defineParams = scriptJsonObject.getJSONObject("defineParams");
                     if (defineParams.containsKey("parameters")) {
                         JSONArray scriptlerScriptParameters = defineParams.getJSONArray("parameters");
                         for (int i = 0; i < scriptlerScriptParameters.size(); i++) {
@@ -176,8 +176,33 @@ public class CascadeChoiceParameter extends AbstractCascadableParameter {
                 final ScriptlerScript scriptlerScript = new ScriptlerScript(scriptlerScriptId, parameters);
                 script = scriptlerScript;
             } else {
-                GroovyScript groovyScript =
-                        (GroovyScript) formData.getJSONObject("script").toBean(GroovyScript.class);
+                String groovyScriptScript = "";
+                Boolean groovyScriptSandbox = false;
+                String groovyFallbackScript = "";
+                Boolean groovyFallabackSandbox = false;
+                if (scriptJsonObject.containsKey("script")) {
+                    final JSONObject scriptScriptJsonObject = scriptJsonObject.getJSONObject("script");
+                    // so many scripts ay?
+                    if (scriptScriptJsonObject.containsKey("script")) {
+                        groovyScriptScript = scriptScriptJsonObject.getString("script");
+                    }
+                    if (scriptScriptJsonObject.containsKey("sandbox")) {
+                        groovyScriptSandbox = scriptScriptJsonObject.getBoolean("sandbox");
+                    }
+                }
+                if (scriptJsonObject.containsKey("fallbackScript")) {
+                    final JSONObject scriptFallbackJsonObject = scriptJsonObject.getJSONObject("fallbackScript");
+                    // so many scripts ay?
+                    if (scriptFallbackJsonObject.containsKey("script")) {
+                        groovyFallbackScript = scriptFallbackJsonObject.getString("script");
+                    }
+                    if (scriptFallbackJsonObject.containsKey("sandbox")) {
+                        groovyFallabackSandbox = scriptFallbackJsonObject.getBoolean("sandbox");
+                    }
+                }
+                GroovyScript groovyScript = new GroovyScript(
+                        new SecureGroovyScript(groovyScriptScript, groovyScriptSandbox, null),
+                        new SecureGroovyScript(groovyFallbackScript, groovyFallabackSandbox, null));
                 script = groovyScript;
             }
             final String choiceType = formData.getString("choiceType");
