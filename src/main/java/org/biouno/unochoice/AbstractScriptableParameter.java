@@ -38,8 +38,6 @@ import org.biouno.unochoice.model.Script;
 import org.biouno.unochoice.util.ScriptCallback;
 import org.biouno.unochoice.util.Utils;
 
-import com.codahale.metrics.Timer.Context;
-
 import hudson.model.AbstractBuild;
 import hudson.model.ParameterValue;
 import hudson.model.Project;
@@ -235,7 +233,6 @@ public abstract class AbstractScriptableParameter extends AbstractUnoChoiceParam
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
     private Object eval(Map<Object, Object> parameters) {
-        Context ctx = PluginImpl.TIMERMETRIC.time();
         try {
             Map<Object, Object> scriptParameters = getHelperParameters();
             scriptParameters.putAll(parameters);
@@ -244,8 +241,6 @@ public abstract class AbstractScriptableParameter extends AbstractUnoChoiceParam
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error executing script for dynamic parameter", e);
             return Collections.emptyMap();
-        } finally {
-            ctx.close();
         }
     }
 

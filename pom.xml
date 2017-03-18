@@ -102,11 +102,6 @@
             <version>1.6</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-    <groupId>io.dropwizard.metrics</groupId>
-    <artifactId>metrics-core</artifactId>
-    <version>3.2.1</version>
-</dependency>
     </dependencies>
 
     <!-- running JS tests -->
