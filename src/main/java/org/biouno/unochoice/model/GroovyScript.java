@@ -171,7 +171,9 @@ public class GroovyScript extends AbstractScript {
         } catch (Exception re) {
             if (this.secureFallbackScript != null) {
                 try {
-                    LOGGER.log(Level.FINEST, "Fallback to default script...", re);
+                    if (LOGGER.isLoggable(Level.FINEST)) {
+                        LOGGER.log(Level.FINEST, "Fallback to default script...", re);
+                    }
                     return secureFallbackScript.evaluate(cl, context);
                 } catch (Exception e2) {
                     LOGGER.log(Level.WARNING, "Error executing fallback script", e2);

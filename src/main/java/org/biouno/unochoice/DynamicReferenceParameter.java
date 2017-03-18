@@ -27,17 +27,12 @@ package org.biouno.unochoice;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.biouno.unochoice.model.Script;
-import org.kohsuke.stapler.Ancestor;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.bind.JavaScriptMethod;
 
 import hudson.Extension;
-import hudson.model.AbstractItem;
-import hudson.model.ParameterDefinition;
 import hudson.util.FormValidation;
-import net.sf.json.JSONObject;
 
 /**
  * <p>Provides a <b>dynamic reference parameter</b> for users. This is a not so elegant
@@ -132,45 +127,13 @@ public class DynamicReferenceParameter extends AbstractCascadableParameter {
     public static final class DescriptorImpl extends UnoChoiceParameterDescriptor {
 
         @Override
-        public ParameterDefinition newInstance(StaplerRequest req, JSONObject formData) throws hudson.model.Descriptor.FormException {
-            String projectName = null;
-            if (req != null) {
-                final Ancestor ancestor = req.findAncestor(AbstractItem.class);
-                if (ancestor != null) {
-                    final Object o = ancestor.getObject();
-                    if (o instanceof AbstractItem) {
-                        final AbstractItem parentItem = (AbstractItem) o;
-                        projectName = parentItem.getName();
-                    }
-                }
-            }
-            final String name = formData.getString("name");
-            final String description = formData.getString("description");
-            final String randomName = formData.getString("randomName");
-            final Script script = null;
-            final String choiceType = formData.getString("choiceType");
-            final String referencedParameters = formData.getString("referencedParameters");
-            final Boolean omitValueField = formData.getBoolean("omitValueField");
-            final DynamicReferenceParameter param = new DynamicReferenceParameter(
-                    name,
-                    description,
-                    randomName,
-                    script,
-                    choiceType,
-                    referencedParameters,
-                    omitValueField);
-            param.setProjectName(projectName);
-            return param;
-        }
-
-        @Override
         public String getDisplayName() {
             return "Active Choices Reactive Reference Parameter";
         }
 
         public FormValidation doCheckRequired(@QueryParameter String value) {
             String strippedValue = StringUtils.strip(value);
-            if ("".equals(strippedValue)) {
+            if (StringUtils.isBlank(strippedValue)) {
                 return FormValidation.error("This field is required.");
             }
             return FormValidation.ok();

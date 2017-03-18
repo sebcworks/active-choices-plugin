@@ -34,8 +34,8 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import org.apache.commons.lang.ObjectUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.biouno.unochoice.AbstractUnoChoiceParameter;
 import org.jenkinsci.plugins.scriptler.config.Script;
 import org.jenkinsci.plugins.scriptler.config.ScriptlerConfiguration;
@@ -56,6 +56,9 @@ import jenkins.model.Jenkins;
  * @since 0.23
  */
 public class Utils {
+
+    private static final String DASH = "-";
+    private static final String SELECTED_PARAMETER_MARK = ":selected";
 
     private Utils() {}
 
@@ -82,7 +85,7 @@ public class Utils {
         if (obj == null)
             return false;
         final String text = obj.toString();
-        return StringUtils.isNotBlank(text) && text.endsWith(":selected");
+        return StringUtils.isNotBlank(text) && text.endsWith(SELECTED_PARAMETER_MARK);
     }
 
     /**
@@ -93,12 +96,12 @@ public class Utils {
      */
     public static @Nonnull String escapeSelected(@Nullable Object obj) {
         if (obj == null)
-            return "";
+            return StringUtils.EMPTY;
         final String text = obj.toString();
         if (StringUtils.isBlank(text))
-            return "";
+            return StringUtils.EMPTY;
         if (isSelected(text))
-            return text.substring(0, text.indexOf(":selected"));
+            return text.substring(0, text.indexOf(SELECTED_PARAMETER_MARK));
         return text;
     }
 
@@ -110,13 +113,17 @@ public class Utils {
      * @return random parameter name
      */
     public static @Nonnull String createRandomParameterName(@Nullable String prefix, @Nullable String suffix) {
-        String paramName = "";
-        if (StringUtils.isNotBlank(prefix))
-            paramName = prefix + "-";
-        paramName += System.nanoTime();
-        if (StringUtils.isNotBlank(suffix))
-            paramName = paramName + "-" + suffix;
-        return paramName;
+        StringBuilder paramName = new StringBuilder();
+        if (StringUtils.isNotBlank(prefix)) {
+            paramName.append(prefix);
+            paramName.append(DASH);
+        }
+        paramName.append(System.nanoTime());
+        if (StringUtils.isNotBlank(suffix)) {
+            paramName.append(DASH);
+            paramName.append(suffix);
+        }
+        return paramName.toString();
     }
 
     /**
@@ -189,12 +196,13 @@ public class Utils {
             if (pd instanceof AbstractUnoChoiceParameter) {
                 AbstractUnoChoiceParameter parameterDefinition = (AbstractUnoChoiceParameter) pd;
                 String uuid = parameterDefinition.getRandomName();
+                // deprecated in favour of a Java7 method. We are still using Java 6...
                 if (ObjectUtils.equals(parameterUUID, uuid)) {
-                    return true;
+                    return Boolean.TRUE;
                 }
             }
         }
-        return false;
+        return Boolean.TRUE;
     }
 
     /**

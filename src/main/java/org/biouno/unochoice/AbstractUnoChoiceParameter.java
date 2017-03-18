@@ -81,6 +81,11 @@ public abstract class AbstractUnoChoiceParameter extends SimpleParameterDefiniti
 
     public static final int DEFAULT_MAX_VISIBLE_ITEM_COUNT = 10;
 
+    private static final String COMMA = ",";
+    private static final String NAME_JSON_KEY = "name";
+    private static final String VALUE_JSON_KEY = "value";
+    private static final String FILE_JSON_KEY = "file";
+
     private String randomName;
 
     /**
@@ -90,12 +95,11 @@ public abstract class AbstractUnoChoiceParameter extends SimpleParameterDefiniti
      *
      * @param name name
      * @param description description
-     * FIXME: remove in new major release
      * @deprecated to fix JENKINS-32149 (create random name only once - this is the parameter ID)
      */
     protected AbstractUnoChoiceParameter(String name, String description) {
         super(name, description);
-        randomName = Utils.createRandomParameterName("choice-parameter", "");
+        randomName = Utils.createRandomParameterName("choice-parameter", StringUtils.EMPTY);
     }
 
     /**
@@ -111,7 +115,7 @@ public abstract class AbstractUnoChoiceParameter extends SimpleParameterDefiniti
     protected AbstractUnoChoiceParameter(String name, String description, String randomName) {
         super(name, description);
         if (StringUtils.isBlank(randomName))
-            this.randomName = Utils.createRandomParameterName("choice-parameter", "");
+            this.randomName = Utils.createRandomParameterName("choice-parameter", StringUtils.EMPTY);
         else
             this.randomName = randomName;
     }
@@ -149,11 +153,11 @@ public abstract class AbstractUnoChoiceParameter extends SimpleParameterDefiniti
         if (LOGGER.isLoggable(Level.FINE)) {
             LOGGER.entering(AbstractUnoChoiceParameter.class.getName(), "createValue", new Object[] {request, json});
         }
-        if (json.containsKey("file")) {
+        if (json.containsKey(FILE_JSON_KEY)) {
             // copied from FileParameterDefinition
             FileItem src;
             try {
-                src = request.getFileItem( json.getString("file") );
+                src = request.getFileItem( json.getString(FILE_JSON_KEY) );
             } catch (ServletException e) {
                 LOGGER.log(Level.SEVERE, "Fatal error while reading uploaded file: " + e.getMessage(), e);
                 return null;
@@ -170,18 +174,18 @@ public abstract class AbstractUnoChoiceParameter extends SimpleParameterDefiniti
             return p;
         } else {
             final JSONObject parameterJsonModel = new JSONObject(false);
-            final Object value = json.get("value");
-            final Object name = json.get("name");
+            final Object value = json.get(VALUE_JSON_KEY);
+            final Object name = json.get(NAME_JSON_KEY);
             final String valueAsText;
 
             if (JSONUtils.isArray(value)) {
-                valueAsText = ((JSONArray) value).join(",", true);
+                valueAsText = ((JSONArray) value).join(COMMA, true);
             } else {
-                valueAsText = (value == null) ? "" : String.valueOf(value);
+                valueAsText = (value == null) ? StringUtils.EMPTY : String.valueOf(value);
             }
 
-            parameterJsonModel.put("name",  name);
-            parameterJsonModel.put("value", valueAsText);
+            parameterJsonModel.put(NAME_JSON_KEY,  name);
+            parameterJsonModel.put(VALUE_JSON_KEY, valueAsText);
 
             StringParameterValue parameterValue = request.bindJSON(StringParameterValue.class, parameterJsonModel);
             parameterValue.setDescription(getDescription());

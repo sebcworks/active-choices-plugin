@@ -59,6 +59,12 @@
     </developers>
 
     <dependencies>
+        <!-- Apache Commons Lang -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.5</version>
+        </dependency>
         <!-- Scriptler is used to eval Groovy parameters -->
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>

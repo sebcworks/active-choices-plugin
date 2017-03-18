@@ -37,8 +37,12 @@ import org.apache.commons.lang.StringUtils;
 import org.biouno.unochoice.model.Script;
 import org.biouno.unochoice.util.ScriptCallback;
 import org.biouno.unochoice.util.Utils;
+import org.kohsuke.stapler.Ancestor;
+import org.kohsuke.stapler.Stapler;
+import org.kohsuke.stapler.StaplerRequest;
 
 import hudson.model.AbstractBuild;
+import hudson.model.AbstractItem;
 import hudson.model.ParameterValue;
 import hudson.model.Project;
 import hudson.model.StringParameterValue;
@@ -85,7 +89,7 @@ public abstract class AbstractScriptableParameter extends AbstractUnoChoiceParam
     /**
      * The project name.
      */
-    private volatile String projectName;
+    private final String projectName;
 
     /**
      * Inherited constructor.
@@ -116,14 +120,18 @@ public abstract class AbstractScriptableParameter extends AbstractUnoChoiceParam
     protected AbstractScriptableParameter(String name, String description, String randomName, Script script) {
         super(name, description, randomName);
         this.script = script;
-        this.projectName = null;
-    }
-
-    public String getProjectName() {
-        return projectName;
-    }
-
-    public void setProjectName(String projectName) {
+        final StaplerRequest currentRequest = Stapler.getCurrentRequest();
+        String projectName = null;
+        if (currentRequest != null) {
+            final Ancestor ancestor = currentRequest.findAncestor(AbstractItem.class);
+            if (ancestor != null) {
+                final Object o = ancestor.getObject();
+                if (o instanceof AbstractItem) {
+                    final AbstractItem parentItem = (AbstractItem) o;
+                    projectName = parentItem.getName();
+                }
+            }
+        }
         this.projectName = projectName;
     }
 
