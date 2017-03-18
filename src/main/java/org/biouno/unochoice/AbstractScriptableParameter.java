@@ -98,22 +98,6 @@ public abstract class AbstractScriptableParameter extends AbstractUnoChoiceParam
      *
      * @param name name
      * @param description description
-     * @param script script used to generate the list of parameter values
-     * @deprecated see JENKINS-32149
-     */
-    protected AbstractScriptableParameter(String name, String description, Script script) {
-        super(name, description);
-        this.script = script;
-        this.projectName = null;
-    }
-
-    /**
-     * Inherited constructor.
-     *
-     * {@inheritDoc}
-     *
-     * @param name name
-     * @param description description
      * @param randomName parameter random generated name (uuid)
      * @param script script used to generate the list of parameter values
      */

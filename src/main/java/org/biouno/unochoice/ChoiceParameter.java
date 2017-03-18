@@ -24,11 +24,11 @@
 
 package org.biouno.unochoice;
 
-import hudson.Extension;
-
 import org.apache.commons.lang.StringUtils;
 import org.biouno.unochoice.model.Script;
 import org.kohsuke.stapler.DataBoundConstructor;
+
+import hudson.Extension;
 
 /**
  * A parameter that renders its options as a choice (select) HTML component.
@@ -52,22 +52,6 @@ public class ChoiceParameter extends AbstractScriptableParameter {
      * Filter flag.
      */
     private final Boolean filterable;
-
-    /**
-     * Constructor called from Jelly with parameters.
-     *
-     * @param name name
-     * @param description description
-     * @param script script
-     * @param choiceType choice type
-     * @param filterable filter flag
-     * @deprecated see JENKINS-32149
-     */
-    public ChoiceParameter(String name, String description, Script script, String choiceType, Boolean filterable) {
-        super(name, description, script);
-        this.choiceType = StringUtils.defaultIfBlank(choiceType, PARAMETER_TYPE_SINGLE_SELECT);
-        this.filterable = filterable;
-    }
 
     /**
      * Constructor called from Jelly with parameters.

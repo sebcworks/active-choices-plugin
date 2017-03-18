@@ -68,24 +68,6 @@ public class CascadeChoiceParameter extends AbstractCascadableParameter {
      *
      * @param name name
      * @param description description
-     * @param script script
-     * @param choiceType choice type
-     * @param referencedParameters referenced parameters
-     * @param filterable filter flag
-     * @deprecated see JENKINS-32149
-     */
-    public CascadeChoiceParameter(String name, String description, Script script, 
-            String choiceType, String referencedParameters, Boolean filterable) {
-        super(name, description, script, referencedParameters);
-        this.choiceType = StringUtils.defaultIfBlank(choiceType, PARAMETER_TYPE_SINGLE_SELECT);
-        this.filterable = filterable;
-    }
-
-    /**
-     * Constructor called from Jelly with parameters.
-     *
-     * @param name name
-     * @param description description
      * @param randomName parameter random generated name (uuid)
      * @param script script
      * @param choiceType choice type

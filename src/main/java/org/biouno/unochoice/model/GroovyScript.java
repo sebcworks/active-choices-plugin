@@ -33,7 +33,6 @@ import java.util.logging.Logger;
 import javax.annotation.Nullable;
 
 import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SecureGroovyScript;
-import org.jenkinsci.plugins.scriptsecurity.scripts.ApprovalContext;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import groovy.lang.Binding;
@@ -58,30 +57,15 @@ public class GroovyScript extends AbstractScript {
     private static final Logger LOGGER = Logger.getLogger(GroovyScript.class.getName());
 
     /**
-     * Script content.
-     */
-    @Deprecated
-    private String script;
-
-    /**
      * Secure script content.
      */
     private SecureGroovyScript secureScript;
-
-    @Nullable
-    @Deprecated
-    private String fallbackScript;
 
     /**
      * Secure fallback script content.
      */
     @Nullable
     private SecureGroovyScript secureFallbackScript;
-
-    @Deprecated
-    public GroovyScript(String script, String fallbackScript) {
-        this(new SecureGroovyScript(script, false, null), new SecureGroovyScript(fallbackScript, false, null));
-    }
 
     @DataBoundConstructor
     public GroovyScript(SecureGroovyScript script, SecureGroovyScript fallbackScript) {
@@ -91,17 +75,6 @@ public class GroovyScript extends AbstractScript {
         if (fallbackScript != null) {
             this.secureFallbackScript = fallbackScript.configuringWithNonKeyItem();
         }
-    }
-
-    private Object readResolve() {
-        if (script != null) {
-            secureScript = new SecureGroovyScript(script, false, null).configuring(ApprovalContext.create());
-        }
-        if (fallbackScript != null) {
-            secureFallbackScript = new SecureGroovyScript(fallbackScript, false, null)
-                    .configuring(ApprovalContext.create());
-        }
-        return this;
     }
 
     /**

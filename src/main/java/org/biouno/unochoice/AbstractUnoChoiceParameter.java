@@ -95,20 +95,6 @@ public abstract class AbstractUnoChoiceParameter extends SimpleParameterDefiniti
      *
      * @param name name
      * @param description description
-     * @deprecated to fix JENKINS-32149 (create random name only once - this is the parameter ID)
-     */
-    protected AbstractUnoChoiceParameter(String name, String description) {
-        super(name, description);
-        randomName = Utils.createRandomParameterName("choice-parameter", StringUtils.EMPTY);
-    }
-
-    /**
-     * Inherited constructor.
-     *
-     * {@inheritDoc}.
-     *
-     * @param name name
-     * @param description description
      * @param randomName the parameter unique ID (a random uuid) created once per parameter. If blank or {@code null}
      * it will be created a new random parameter name that starts with choice-parameter
      */
