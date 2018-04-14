@@ -39,11 +39,12 @@ import org.kohsuke.stapler.Ancestor;
 import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest;
 
-import hudson.model.AbstractBuild;
 import hudson.model.AbstractItem;
+import hudson.model.Job;
 import hudson.model.ParameterValue;
-import hudson.model.Project;
+import hudson.model.Run;
 import hudson.model.StringParameterValue;
+import jenkins.model.Jenkins;
 
 /**
  * Base class for parameters with scripts.
@@ -131,7 +132,7 @@ public abstract class AbstractScriptableParameter extends AbstractUnoChoiceParam
                 final Object o = ancestor.getObject();
                 if (o instanceof AbstractItem) {
                     final AbstractItem parentItem = (AbstractItem) o;
-                    projectName = parentItem.getName();
+                    projectName = parentItem.getFullName();
                 }
             }
         }
@@ -166,19 +167,22 @@ public abstract class AbstractScriptableParameter extends AbstractUnoChoiceParam
         final Map<Object, Object> helperParameters = new LinkedHashMap<Object, Object>();
 
         // First, if the project name is set, we then find the project by its name, and inject into the map
-        Project<?, ?> project = null;
+        Object project = null;
         if (StringUtils.isNotBlank(this.projectName)) {
             // first we try to get the item given its name, which is more efficient
-            project = Utils.getProjectByName(this.projectName);
+            project = Jenkins.getInstance().getItemByFullName(this.projectName);
         } else {
             // otherwise, in case we don't have the item name, we iterate looking for a job that uses this UUID
             project = Utils.findProjectByParameterUUID(this.getRandomName());
         }
         if (project != null) {
             helperParameters.put(JENKINS_PROJECT_VARIABLE_NAME, project);
-            AbstractBuild<?, ?> build = project.getLastBuild();
-            if (build != null && build.getHasArtifacts()) {
-                helperParameters.put(JENKINS_BUILD_VARIABLE_NAME, build);
+            if (project instanceof Job) {
+                @SuppressWarnings("rawtypes")
+                Run build = ((Job) project).getLastBuild();
+                if (build != null) {
+                    helperParameters.put(JENKINS_BUILD_VARIABLE_NAME, build);
+                }
             }
         }
 

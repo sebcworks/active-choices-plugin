@@ -145,25 +145,6 @@ public class Utils {
     }
 
     /**
-     * Get project in Jenkins given its name.
-     *
-     * @since 1.3
-     * @param projectName project name in Jenkins
-     * @return Project or {@code null} if none with this name
-     * @deprecated The choice is arbitrary if there are multiple matches; use {@link Item#getFullName} and {@link Jenkins#getItemByFullName(String, Class)} instead.
-     */
-    @SuppressWarnings("rawtypes")
-    public static @CheckForNull Project<?, ?> getProjectByName(@Nonnull String projectName) {
-        Authentication auth = Jenkins.getAuthentication();
-        for (Project p : Items.allItems(ACL.SYSTEM, Jenkins.getInstance(), Project.class)) {
-            if (p.getName().equals(projectName) && p.getACL().hasPermission(auth, Item.READ)) {
-                return p;
-            }
-        }
-        return null;
-    }
-
-    /**
      * Find the current project give its parameter UUID.
      *
      * @author dynamic-parameter-plugin
