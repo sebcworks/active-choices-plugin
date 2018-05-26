@@ -28,8 +28,10 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 
+import org.apache.commons.collections.map.LRUMap;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.biouno.unochoice.model.Script;
@@ -39,11 +41,12 @@ import org.kohsuke.stapler.Ancestor;
 import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest;
 
-import hudson.model.AbstractBuild;
 import hudson.model.AbstractItem;
+import hudson.model.Job;
 import hudson.model.ParameterValue;
-import hudson.model.Project;
+import hudson.model.Run;
 import hudson.model.StringParameterValue;
+import jenkins.model.Jenkins;
 
 /**
  * Base class for parameters with scripts.
@@ -53,6 +56,9 @@ import hudson.model.StringParameterValue;
  */
 public abstract class AbstractScriptableParameter extends AbstractUnoChoiceParameter
     implements ScriptableParameter<Map<Object, Object>> {
+
+    @SuppressWarnings("unchecked")
+    private static final Map<String, Object> CACHE = Collections.synchronizedMap(new LRUMap(100));
 
     /*
      * Serial UID.
@@ -90,22 +96,6 @@ public abstract class AbstractScriptableParameter extends AbstractUnoChoiceParam
      * The project name.
      */
     private final String projectName;
-
-    /**
-     * Inherited constructor.
-     *
-     * {@inheritDoc}
-     *
-     * @param name name
-     * @param description description
-     * @param script script used to generate the list of parameter values
-     * @deprecated see JENKINS-32149
-     */
-    protected AbstractScriptableParameter(String name, String description, Script script) {
-        super(name, description);
-        this.script = script;
-        this.projectName = null;
-    }
 
     /**
      * Inherited constructor.
@@ -163,21 +153,30 @@ public abstract class AbstractScriptableParameter extends AbstractUnoChoiceParam
      */
     private Map<Object, Object> getHelperParameters() {
         // map with parameters
-        final Map<Object, Object> helperParameters = new LinkedHashMap<Object, Object>();
+        final Map<Object, Object> helperParameters = new ConcurrentHashMap<Object, Object>();
 
         // First, if the project name is set, we then find the project by its name, and inject into the map
-        Project<?, ?> project = null;
+        Object project = null;
         if (StringUtils.isNotBlank(this.projectName)) {
             // first we try to get the item given its name, which is more efficient
-            project = Utils.getProjectByName(this.projectName);
+            project = CACHE.get(this.projectName);
+            if (project == null) {
+                project = Jenkins.getInstance().getItemByFullName(this.projectName);
+                CACHE.put(this.projectName, project);
+            }
         } else {
             // otherwise, in case we don't have the item name, we iterate looking for a job that uses this UUID
-            project = Utils.findProjectByParameterUUID(this.getRandomName());
+            project = CACHE.get(this.projectName);
+            if (project == null) {
+                project = Utils.findProjectByParameterUUID(this.getRandomName());
+                CACHE.put(this.projectName, project);
+            }
         }
-        if (project != null) {
+        if (project != null && project instanceof Job) {
             helperParameters.put(JENKINS_PROJECT_VARIABLE_NAME, project);
-            AbstractBuild<?, ?> build = project.getLastBuild();
-            if (build != null && build.getHasArtifacts()) {
+            @SuppressWarnings("rawtypes")
+            Run build = ((Job) project).getLastBuild();
+            if (build != null) {
                 helperParameters.put(JENKINS_BUILD_VARIABLE_NAME, build);
             }
         }

@@ -75,25 +75,6 @@ public class DynamicReferenceParameter extends AbstractCascadableParameter {
      *
      * @param name name
      * @param description description
-     * @param script script
-     * @param choiceType choice type
-     * @param referencedParameters referenced parameters
-     * @param omitValueField used in the UI to decide whether to include a hidden empty &lt;input name=value&gt;.
-     * <code>false</code> by default.
-     * @deprecated see JENKINS-32149
-     */
-    public DynamicReferenceParameter(String name, String description, Script script, 
-            String choiceType, String referencedParameters, Boolean omitValueField) {
-        super(name, description, script, referencedParameters);
-        this.choiceType = StringUtils.defaultIfBlank(choiceType, PARAMETER_TYPE_SINGLE_SELECT);
-        this.omitValueField = BooleanUtils.toBooleanDefaultIfNull(omitValueField, Boolean.FALSE);
-    }
-
-    /**
-     * Constructor called from Jelly with parameters.
-     *
-     * @param name name
-     * @param description description
      * @param randomName parameter random generated name (uuid)
      * @param script script
      * @param choiceType choice type
@@ -167,7 +148,7 @@ public class DynamicReferenceParameter extends AbstractCascadableParameter {
 
         public FormValidation doCheckRequired(@QueryParameter String value) {
             String strippedValue = StringUtils.strip(value);
-            if ("".equals(strippedValue)) {
+            if (StringUtils.isBlank(strippedValue)) {
                 return FormValidation.error("This field is required.");
             }
             return FormValidation.ok();

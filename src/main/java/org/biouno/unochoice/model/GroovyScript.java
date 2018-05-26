@@ -34,7 +34,6 @@ import javax.annotation.Nullable;
 
 import hudson.markup.RawHtmlMarkupFormatter;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SecureGroovyScript;
-import org.jenkinsci.plugins.scriptsecurity.scripts.ApprovalContext;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import groovy.lang.Binding;
@@ -59,30 +58,15 @@ public class GroovyScript extends AbstractScript {
     private static final Logger LOGGER = Logger.getLogger(GroovyScript.class.getName());
 
     /**
-     * Script content.
-     */
-    @Deprecated
-    private transient String script;
-
-    /**
      * Secure script content.
      */
     private SecureGroovyScript secureScript;
-
-    @Nullable
-    @Deprecated
-    private transient String fallbackScript;
 
     /**
      * Secure fallback script content.
      */
     @Nullable
     private SecureGroovyScript secureFallbackScript;
-
-    @Deprecated
-    public GroovyScript(String script, String fallbackScript) {
-        this(new SecureGroovyScript(script, false, null), new SecureGroovyScript(fallbackScript, false, null));
-    }
 
     @DataBoundConstructor
     public GroovyScript(SecureGroovyScript script, SecureGroovyScript fallbackScript) {
@@ -92,17 +76,6 @@ public class GroovyScript extends AbstractScript {
         if (fallbackScript != null) {
             this.secureFallbackScript = fallbackScript.configuringWithNonKeyItem();
         }
-    }
-
-    private Object readResolve() {
-        if (script != null) {
-            secureScript = new SecureGroovyScript(script, false, null).configuring(ApprovalContext.create());
-        }
-        if (fallbackScript != null) {
-            secureFallbackScript = new SecureGroovyScript(fallbackScript, false, null)
-                    .configuring(ApprovalContext.create());
-        }
-        return this;
     }
 
     /**
@@ -146,7 +119,9 @@ public class GroovyScript extends AbstractScript {
                 PluginManager pluginManager = instance.getPluginManager();
                 cl = pluginManager.uberClassLoader;
             } catch (Exception e) {
-                LOGGER.log(Level.FINEST, e.getMessage(), e);
+                if (LOGGER.isLoggable(Level.FINEST)) {
+                    LOGGER.log(Level.FINEST, e.getMessage(), e);
+                }
             }
         }
         if (cl == null) {
@@ -178,7 +153,9 @@ public class GroovyScript extends AbstractScript {
         } catch (Exception re) {
             if (this.secureFallbackScript != null) {
                 try {
-                    LOGGER.log(Level.FINEST, "Fallback to default script...", re);
+                    if (LOGGER.isLoggable(Level.FINEST)) {
+                        LOGGER.log(Level.FINEST, "Fallback to default script...", re);
+                    }
                     Object returnValue = secureFallbackScript.evaluate(cl, context);
                     if (returnValue instanceof CharSequence) {
                         if (secureFallbackScript.isSandbox()) {

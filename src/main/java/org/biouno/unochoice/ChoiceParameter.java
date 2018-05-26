@@ -61,41 +61,6 @@ public class ChoiceParameter extends AbstractScriptableParameter {
 
     /**
      * Constructor called from Jelly with parameters.
-     *
-     * @param name name
-     * @param description description
-     * @param script script
-     * @param choiceType choice type
-     * @param filterable filter flag
-     * @deprecated see JENKINS-32149
-     */
-    public ChoiceParameter(String name, String description, Script script, String choiceType, Boolean filterable) {
-        super(name, description, script);
-        this.choiceType = StringUtils.defaultIfBlank(choiceType, PARAMETER_TYPE_SINGLE_SELECT);
-        this.filterable = filterable;
-        this.filterLength = null;
-    }
-
-    /**
-     * Constructor called from Jelly with parameters.
-     * @param name name
-     * @param description description
-     * @param randomName parameter random generated name
-     * @param script script
-     * @param choiceType choice type
-     * @param filterable filter flag
-     * @deprecated see JENKINS-31625
-     */
-    public ChoiceParameter(String name, String description, String randomName, Script script, String choiceType,
-                           Boolean filterable) {
-        super(name, description, randomName, script);
-        this.choiceType = StringUtils.defaultIfBlank(choiceType, PARAMETER_TYPE_SINGLE_SELECT);
-        this.filterable = filterable;
-        this.filterLength = null;
-    }
-
-    /**
-     * Constructor called from Jelly with parameters.
      * @param name name
      * @param description description
      * @param randomName parameter random generated name
