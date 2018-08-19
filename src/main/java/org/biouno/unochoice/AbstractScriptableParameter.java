@@ -90,11 +90,11 @@ public abstract class AbstractScriptableParameter extends AbstractUnoChoiceParam
     /**
      * The project name.
      */
-    private final String projectName;
+    private String projectName;
     /**
      * The project Full Name (including folder).
      */
-    private final String projectFullName;
+    private String projectFullName;
 
     /**
      * Inherited constructor.
@@ -129,22 +129,7 @@ public abstract class AbstractScriptableParameter extends AbstractUnoChoiceParam
         // Try to get the project name from the current request. In case of being called in some other non-web way,
         // the name will be fetched later via Jenkins.getInstance() and iterating through all items. This is for a
         // performance wise approach first.
-        final StaplerRequest currentRequest = Stapler.getCurrentRequest();
-        String projectName = null;
-        String projectFullName = null;
-        if (currentRequest != null) {
-            final Ancestor ancestor = currentRequest.findAncestor(AbstractItem.class);
-            if (ancestor != null) {
-                final Object o = ancestor.getObject();
-                if (o instanceof AbstractItem) {
-                    final AbstractItem parentItem = (AbstractItem) o;
-                    projectName = parentItem.getName();
-                    projectFullName = parentItem.getFullName();
-                }
-            }
-        }
-        this.projectName = projectName;
-        this.projectFullName = projectFullName;
+        refreshProjectName();
     }
 
     /**
@@ -187,6 +172,10 @@ public abstract class AbstractScriptableParameter extends AbstractUnoChoiceParam
         if (project == null) {
             // otherwise, in case we don't have the item name, we iterate looking for a job that uses this UUID
             project = Utils.findProjectByParameterUUID(this.getRandomName());
+            if (project != null) {
+                // Project found! Refresh the project name and full name
+                refreshProjectName();
+            }
         }
         if (project != null) {
             helperParameters.put(JENKINS_PROJECT_VARIABLE_NAME, project);
@@ -300,6 +289,28 @@ public abstract class AbstractScriptableParameter extends AbstractUnoChoiceParam
         if (visibleItemCount < DEFAULT_MAX_VISIBLE_ITEM_COUNT)
             return visibleItemCount;
         return DEFAULT_MAX_VISIBLE_ITEM_COUNT;
+    }
+
+    private void refreshProjectName() {
+        // Try to get the project name from the current request. In case of being called in some other non-web way,
+        // the name will be fetched later via Jenkins.getInstance() and iterating through all items. This is for a
+        // performance wise approach first.
+        final StaplerRequest currentRequest = Stapler.getCurrentRequest();
+        String projectName = null;
+        String projectFullName = null;
+        if (currentRequest != null) {
+            final Ancestor ancestor = currentRequest.findAncestor(AbstractItem.class);
+            if (ancestor != null) {
+                final Object o = ancestor.getObject();
+                if (o instanceof AbstractItem) {
+                    final AbstractItem parentItem = (AbstractItem) o;
+                    projectName = parentItem.getName();
+                    projectFullName = parentItem.getFullName();
+                }
+            }
+        }
+        this.projectName = projectName;
+        this.projectFullName = projectFullName;
     }
 
 }
